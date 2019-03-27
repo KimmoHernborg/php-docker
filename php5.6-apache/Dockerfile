@@ -1,4 +1,4 @@
-# Partially from: https://github.com/docker-library/wordpress/raw/5bad0cb022513fc9bb3bbc72c62db2bac0f5e84a/php7.2/apache/Dockerfile
+# Partially from: https://github.com/docker-library/wordpress/raw/f63c0db6593494e8fee0e542af9413e22c1da15b/php5.6/apache/Dockerfile
 FROM php:5.6-apache
 
 # install the PHP extensions we need
