@@ -1,5 +1,5 @@
-# Partially from: https://github.com/docker-library/wordpress/blob/master/php7.3/apache/Dockerfile
-FROM php:7.3-apache
+# Partially from: https://github.com/docker-library/wordpress/blob/master/php7.4/apache/Dockerfile
+FROM php:7.4-apache
 
 # install the PHP extensions we need
 RUN set -ex; \
