@@ -1,7 +1,18 @@
 # Partially from: https://github.com/docker-library/wordpress/raw/f63c0db6593494e8fee0e542af9413e22c1da15b/php5.6/apache/Dockerfile
+
 FROM php:5.6-apache
 
-# install the PHP extensions we need
+# Enable SSL
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		ssl-cert \
+	; \
+	rm -rf /var/lib/apt/lists/*; \
+	a2enmod ssl; \
+	a2ensite default-ssl
+
+# install the PHP extensions we need (https://make.wordpress.org/hosting/handbook/handbook/server-environment/#php-extensions)
 RUN set -ex; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
@@ -10,10 +21,17 @@ RUN set -ex; \
 	apt-get install -y --no-install-recommends \
 		libjpeg-dev \
 		libpng-dev \
+		libzip-dev \
 	; \
 	\
 	docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
-	docker-php-ext-install gd mysql mysqli pdo_mysql opcache zip; \
+	docker-php-ext-install -j "$(nproc)" \
+		gd \
+		mysqli \
+		pdo_mysql \
+		opcache \
+		zip \
+	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
@@ -41,14 +59,6 @@ RUN { \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 RUN a2enmod rewrite expires
-
-# Enable SSL
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends ssl-cert && \
-	rm -rf /var/lib/apt/lists/* && \
-	a2enmod ssl && \
-	a2ensite default-ssl
-#	&& \ service apache2 reload
 
 VOLUME /var/www/html
 

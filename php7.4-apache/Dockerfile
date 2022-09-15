@@ -1,5 +1,16 @@
-# Partially from: https://github.com/docker-library/wordpress/blob/master/php7.4/apache/Dockerfile
+# Partially from: https://github.com/docker-library/wordpress/blob/master/latest/php7.4/apache/Dockerfile
+
 FROM php:7.4-apache
+
+# Enable SSL
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		ssl-cert \
+	; \
+	rm -rf /var/lib/apt/lists/*; \
+	a2enmod ssl; \
+	a2ensite default-ssl
 
 # install the PHP extensions we need (https://make.wordpress.org/hosting/handbook/handbook/server-environment/#php-extensions)
 RUN set -ex; \
@@ -11,10 +22,15 @@ RUN set -ex; \
 		libfreetype6-dev \
 		libjpeg-dev \
 		libpng-dev \
+		libwebp-dev \
 		libzip-dev \
 	; \
 	\
-	docker-php-ext-configure gd --with-freetype --with-jpeg; \
+	docker-php-ext-configure gd \
+		--with-freetype \
+		--with-jpeg \
+		--with-webp \
+	; \
 	docker-php-ext-install -j "$(nproc)" \
 		gd \
 		mysqli \
@@ -23,10 +39,18 @@ RUN set -ex; \
 		zip \
 	; \
 	\
+# some misbehaving extensions end up outputting to stdout 🙈 (https://github.com/docker-library/wordpress/issues/669#issuecomment-993945967)
+	out="$(php -r 'exit(0);')"; \
+	[ -z "$out" ]; \
+	err="$(php -r 'exit(0);' 3>&1 1>&2 2>&3)"; \
+	[ -z "$err" ]; \
+	\
+	extDir="$(php -r 'echo ini_get("extension_dir");')"; \
+	[ -d "$extDir" ]; \
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
 	apt-mark manual $savedAptMark; \
-	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
+	ldd "$extDir"/*.so \
 		| awk '/=>/ { print $3 }' \
 		| sort -u \
 		| xargs -r dpkg-query -S \
@@ -35,7 +59,12 @@ RUN set -ex; \
 		| xargs -rt apt-mark manual; \
 	\
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /var/lib/apt/lists/*
+	rm -rf /var/lib/apt/lists/*; \
+	\
+	! { ldd "$extDir"/*.so | grep 'not found'; }; \
+# check for output like "PHP Warning:  PHP Startup: Unable to load dynamic library 'foo' (tried: ...)
+	err="$(php --version 3>&1 1>&2 2>&3)"; \
+	[ -z "$err" ]
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
@@ -81,13 +110,6 @@ RUN set -eux; \
 # https://github.com/docker-library/wordpress/issues/383#issuecomment-507886512
 # (replace all instances of "%h" with "%a" in LogFormat)
 	find /etc/apache2 -type f -name '*.conf' -exec sed -ri 's/([[:space:]]*LogFormat[[:space:]]+"[^"]*)%h([^"]*")/\1%a\2/g' '{}' +
-
-# Enable SSL
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends ssl-cert && \
-	rm -rf /var/lib/apt/lists/* && \
-	a2enmod ssl && \
-	a2ensite default-ssl
 
 VOLUME /var/www/html
 

@@ -1,5 +1,16 @@
 # Partially from: https://github.com/docker-library/wordpress/blob/master/php7.2/apache/Dockerfile
+
 FROM php:7.2-apache
+
+# Enable SSL
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		ssl-cert \
+	; \
+	rm -rf /var/lib/apt/lists/*; \
+	a2enmod ssl; \
+	a2ensite default-ssl
 
 # install the PHP extensions we need (https://make.wordpress.org/hosting/handbook/handbook/server-environment/#php-extensions)
 RUN set -ex; \
@@ -11,6 +22,7 @@ RUN set -ex; \
 		libfreetype6-dev \
 		libjpeg-dev \
 		libpng-dev \
+		libzip-dev \
 	; \
 	\
 	docker-php-ext-configure gd --with-freetype-dir=/usr --with-jpeg-dir=/usr --with-png-dir=/usr; \
@@ -80,13 +92,6 @@ RUN set -eux; \
 # https://github.com/docker-library/wordpress/issues/383#issuecomment-507886512
 # (replace all instances of "%h" with "%a" in LogFormat)
 	find /etc/apache2 -type f -name '*.conf' -exec sed -ri 's/([[:space:]]*LogFormat[[:space:]]+"[^"]*)%h([^"]*")/\1%a\2/g' '{}' +
-
-# Enable SSL
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends ssl-cert && \
-	rm -rf /var/lib/apt/lists/* && \
-	a2enmod ssl && \
-	a2ensite default-ssl
 
 VOLUME /var/www/html
 
