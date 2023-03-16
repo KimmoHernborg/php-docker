@@ -13,9 +13,10 @@ Based on the official Wordpress docker image, but without Wordpress.
 * Enable SSL (default self-signed SSL)
 
 ## Versions available
+* PHP8.2 - Apache
 * PHP8.1 - Apache
 * PHP8.0 - Apache
-* PHP7.4 - Apache
+* PHP7.4 - Apache (*deprecated*)
 * PHP7.3 - Apache (*deprecated*)
 * PHP7.2 - Apache (*deprecated*)
 * PHP5.6 - Apache (*deprecated*)

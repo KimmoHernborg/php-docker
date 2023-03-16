@@ -14,7 +14,7 @@ echo
 
 for folder in */ ; do
   TAG=$(echo "$folder" | grep -oE '[0-9.]+')
-  if [[ $TAG == "5.6" || $TAG == "7.2" || $TAG == "7.3" ]]; then continue; fi # Skip 5.6, 7.2 and 7.3 (@todo remove from repo)
+  if [[ $TAG == "5.6" || $TAG == "7.2" || $TAG == "7.3" || $TAG == "7.4" ]]; then continue; fi # Skip 5.6, 7.2, 7.3 and 7.4 (@todo remove from repo)
 
   pushd "$folder" || exit
   echo
